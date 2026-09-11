@@ -1,7 +1,7 @@
-
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 import os
+import threading
 from encryption import encrypt_file
 from s3_uploader import upload_to_s3
 
@@ -9,13 +9,14 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.0]")
+        self.title("S3Drive Replica - Secure Uploader [v0.2.0]")
         self.geometry("600x700")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
         # UI State
         self.selected_files = []
+        self.is_uploading = False
 
         # --- UI LAYOUT ---
         self.grid_columnconfigure(0, weight=1)
@@ -56,7 +57,7 @@ class S3DriveApp(ctk.CTk):
         self.btn_select.pack(pady=5)
 
         self.btn_upload = ctk.CTkButton(self, text="ENCRYPT & UPLOAD", fg_color="green", 
-                                       hover_color="darkgreen", command=self.process_upload, font=("Arial", 14, "bold"))
+                                       hover_color="darkgreen", command=self.start_upload_thread, font=("Arial", 14, "bold"))
         self.btn_upload.pack(pady=30)
 
         # Log
@@ -73,6 +74,10 @@ class S3DriveApp(ctk.CTk):
         return entry
 
     def write_log(self, text):
+        # Thread-safe GUI update
+        self.after(0, lambda: self._do_write_log(text))
+
+    def _do_write_log(self, text):
         self.log.insert("end", f"{text}\n")
         self.log.see("end")
 
@@ -83,7 +88,18 @@ class S3DriveApp(ctk.CTk):
             self.file_label.configure(text=f"{len(files)} file(s) selected")
             self.write_log(f"Selected {len(files)} files. 📂")
 
+    def start_upload_thread(self):
+        if self.is_uploading:
+            return
+        
+        # Start a background thread to keep GUI responsive
+        thread = threading.Thread(target=self.process_upload, daemon=True)
+        thread.start()
+
     def process_upload(self):
+        self.is_uploading = True
+        self.after(0, lambda: self.btn_upload.configure(state="disabled", text="Uploading... 🚀"))
+
         # Validation
         access = self.access_key.get()
         secret = self.secret_key.get()
@@ -92,14 +108,18 @@ class S3DriveApp(ctk.CTk):
         key_data = self.key_input.get("1.0", "end-1c").strip()
 
         if not all([access, secret, bucket, region, key_data]):
-            messagebox.showerror("Error", "Please fill in all connection and encryption details!")
+            self.after(0, lambda: messagebox.showerror("Error", "Please fill in all connection and encryption details!"))
+            self.finalize_upload()
             return
 
         if not self.selected_files:
-            messagebox.showerror("Error", "Please select at least one file!")
+            self.after(0, lambda: messagebox.showerror("Error", "Please select at least one file!"))
+            self.finalize_upload()
             return
 
         mode = self.enc_mode.get()
+        success_count = 0
+        fail_count = 0
         
         for file_path in self.selected_files:
             filename = os.path.basename(file_path)
@@ -125,16 +145,27 @@ class S3DriveApp(ctk.CTk):
                     # 3. Remove Local File (Only after verified success)
                     os.remove(file_path)
                     self.write_log(f"Deleted local file {filename}. 🧹")
+                    success_count += 1
                 else:
                     self.write_log(f"Upload/Verification failed for {filename}: {msg} ❌")
                     self.write_log(f"Local file {filename} has been KEPT for safety! 🛡️")
+                    fail_count += 1
 
             except Exception as e:
                 self.write_log(f"Error processing {filename}: {str(e)} ❌")
+                fail_count += 1
 
+        # Final Report
+        summary = f"Process completed!\n\n✅ Verified: {success_count}\n❌ Failed: {fail_count}\n\nBucket: {bucket}\nRegion: {region}"
+        self.after(0, lambda: messagebox.showinfo("Finished", summary))
+        
         self.selected_files = []
-        self.file_label.configure(text="No files selected")
-        messagebox.showinfo("Finished", "Upload process completed!")
+        self.after(0, lambda: self.file_label.configure(text="No files selected"))
+        self.finalize_upload()
+
+    def finalize_upload(self):
+        self.is_uploading = False
+        self.after(0, lambda: self.btn_upload.configure(state="normal", text="ENCRYPT & UPLOAD"))
 
 if __name__ == "__main__":
     app = S3DriveApp()
