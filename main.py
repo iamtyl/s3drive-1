@@ -9,21 +9,22 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.2.0]")
-        self.geometry("600x700")
+        self.title("S3Drive Replica - Secure Uploader [v0.3.0]")
+        self.geometry("600x750")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
         # UI State
         self.selected_files = []
         self.is_uploading = False
+        self.log_file_path = "app_log.txt"
 
         # --- UI LAYOUT ---
         self.grid_columnconfigure(0, weight=1)
 
         # Connection Frame
         self.conn_frame = ctk.CTkFrame(self)
-        self.conn_frame.pack(pady=20, padx=20, fill="x")
+        self.conn_frame.pack(pady=15, padx=20, fill="x")
         
         ctk.CTkLabel(self.conn_frame, text="AWS S3 Connection", font=("Arial", 16, "bold")).pack(pady=5)
         
@@ -34,7 +35,7 @@ class S3DriveApp(ctk.CTk):
 
         # Security Frame
         self.sec_frame = ctk.CTkFrame(self)
-        self.sec_frame.pack(pady=20, padx=20, fill="x")
+        self.sec_frame.pack(pady=15, padx=20, fill="x")
         
         ctk.CTkLabel(self.sec_frame, text="PGP Encryption", font=("Arial", 16, "bold")).pack(pady=5)
         
@@ -48,7 +49,7 @@ class S3DriveApp(ctk.CTk):
 
         # Upload Frame
         self.up_frame = ctk.CTkFrame(self)
-        self.up_frame.pack(pady=20, padx=20, fill="x")
+        self.up_frame.pack(pady=15, padx=20, fill="x")
 
         self.file_label = ctk.CTkLabel(self.up_frame, text="No files selected")
         self.file_label.pack(pady=10)
@@ -56,14 +57,16 @@ class S3DriveApp(ctk.CTk):
         self.btn_select = ctk.CTkButton(self.up_frame, text="Select Files", command=self.select_files)
         self.btn_select.pack(pady=5)
 
-        self.btn_upload = ctk.CTkButton(self, text="ENCRYPT & UPLOAD", fg_color="green", 
-                                       hover_color="darkgreen", command=self.start_upload_thread, font=("Arial", 14, "bold"))
-        self.btn_upload.pack(pady=30)
-
-        # Log
-        self.log = ctk.CTkTextbox(self, height=150)
+        # Log Window (Moved ABOVE the button for visibility!)
+        ctk.CTkLabel(self, text="Activity Log", font=("Arial", 12, "bold")).pack(pady=(10, 0))
+        self.log = ctk.CTkTextbox(self, height=200)
         self.log.pack(pady=10, padx=20, fill="x")
         self.write_log("Ready to upload! ✨")
+
+        # Action Button (Now at the very bottom)
+        self.btn_upload = ctk.CTkButton(self, text="ENCRYPT & UPLOAD", fg_color="green", 
+                                       hover_color="darkgreen", command=self.start_upload_thread, font=("Arial", 14, "bold"))
+        self.btn_upload.pack(pady=20)
 
     def create_input(self, parent, label, show=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -76,6 +79,13 @@ class S3DriveApp(ctk.CTk):
     def write_log(self, text):
         # Thread-safe GUI update
         self.after(0, lambda: self._do_write_log(text))
+        
+        # Also write to backup file for debugging
+        try:
+            with open(self.log_file_path, "a", encoding="utf-8") as f:
+                f.write(f"{text}\n")
+        except:
+            pass
 
     def _do_write_log(self, text):
         self.log.insert("end", f"{text}\n")
@@ -92,7 +102,10 @@ class S3DriveApp(ctk.CTk):
         if self.is_uploading:
             return
         
-        # Start a background thread to keep GUI responsive
+        # Clear logs before starting new process
+        self.log.delete("1.0", "end")
+        self.write_log("Starting new upload process... 🚀")
+        
         thread = threading.Thread(target=self.process_upload, daemon=True)
         thread.start()
 
