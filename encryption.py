@@ -4,17 +4,22 @@ import os
 
 def encrypt_symmetric(data, passphrase):
     """Encrypts data using a symmetric passphrase."""
-    # In PGPy, symmetric encryption is done directly on the message
+    # In PGPy, we create a PGPMessage and encrypt it.
+    # The result of encrypt() is a PGPMessage that is encrypted.
     message = pgpy.PGPMessage.new(data)
-    encrypted_data = message.encrypt(passphrase)
-    return encrypted_data.serialize()
+    encrypted_message = message.encrypt(passphrase)
+    
+    # To get the bytes for S3 upload, we cast it to bytes or use str().
+    # In recent PGPy, we can just call bytes(encrypted_message).
+    return bytes(encrypted_message)
 
 def encrypt_asymmetric(data, public_key_text):
     """Encrypts data using a PGP public key."""
     key, _ = pgpy.PGPKey.from_blob(public_key_text)
     message = pgpy.PGPMessage.new(data)
-    encrypted_data = message.encrypt(key)
-    return encrypted_data.serialize()
+    encrypted_message = message.encrypt(key)
+    
+    return bytes(encrypted_message)
 
 def encrypt_file(file_path, passphrase=None, public_key=None):
     """
