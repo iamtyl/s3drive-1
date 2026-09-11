@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox
 import os
 import threading
 import json
+import sys
 import windnd
 from encryption import encrypt_file
 from s3_uploader import upload_to_s3
@@ -11,10 +12,9 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.9]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.10]")
         self.geometry("600x800")
         
-        # CORRECTED: These are class methods of customtkinter, not methods of the app instance (self)
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
@@ -22,7 +22,16 @@ class S3DriveApp(ctk.CTk):
         self.selected_files = []
         self.is_uploading = False
         self.log_file_path = "app_log.txt"
-        self.config_file = "config.json"
+        
+        # Determine config path relative to the .exe location
+        if getattr(sys, 'frozen', False):
+            # If running as a bundled .exe
+            self.app_dir = os.path.dirname(sys.executable)
+        else:
+            # If running as a script
+            self.app_dir = os.path.dirname(os.path.abspath(__file__))
+            
+        self.config_file = os.path.join(self.app_dir, "config.json")
 
         # --- UI LAYOUT ---
         self.main_container = ctk.CTkScrollableFrame(self)
@@ -83,7 +92,8 @@ class S3DriveApp(ctk.CTk):
         self.load_config()
 
         # --- Drag and Drop Setup ---
-        windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
+        # Delay the hook until the window is fully rendered to prevent crashes
+        self.after(200, self.setup_drag_and_drop)
 
     def create_input(self, parent, label, show=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -96,7 +106,9 @@ class S3DriveApp(ctk.CTk):
     def write_log(self, text):
         self.after(0, lambda: self._do_write_log(text))
         try:
-            with open(self.log_file_path, "a", encoding="utf-8") as f:
+            # Log file also saved in app directory
+            full_log_path = os.path.join(self.app_dir, self.log_file_path)
+            with open(full_log_path, "a", encoding="utf-8") as f:
                 f.write(f"{text}\n")
         except:
             pass
@@ -104,6 +116,13 @@ class S3DriveApp(ctk.CTk):
     def _do_write_log(self, text):
         self.log.insert("end", f"{text}\n")
         self.log.see("end")
+
+    def setup_drag_and_drop(self):
+        try:
+            windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
+            self.write_log("Drag and drop system enabled. 📥")
+        except Exception as e:
+            self.write_log(f"Failed to enable drag and drop: {str(e)} ❌")
 
     def update_file_list_ui(self):
         for widget in self.file_list_frame.winfo_children():
