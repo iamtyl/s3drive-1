@@ -10,7 +10,7 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.6]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.7]")
         self.geometry("600x800")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
@@ -76,8 +76,8 @@ class S3DriveApp(ctk.CTk):
         self.write_log("Ready to upload! ✨")
 
         # --- Drag and Drop Setup ---
-        # Use windnd to hook into the Windows window handle
-        windnd.hook_dropfiles(self, self.handle_drop)
+        # Use windnd to hook into the Windows window handle (winfo_id() is the HWND)
+        windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
 
     def create_input(self, parent, label, show=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
