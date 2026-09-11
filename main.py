@@ -12,7 +12,7 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.10]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.11]")
         self.geometry("600x800")
         
         ctk.set_appearance_mode("dark")
@@ -21,17 +21,15 @@ class S3DriveApp(ctk.CTk):
         # UI State
         self.selected_files = []
         self.is_uploading = False
-        self.log_file_path = "app_log.txt"
         
-        # Determine config path relative to the .exe location
-        if getattr(sys, 'frozen', False):
-            # If running as a bundled .exe
-            self.app_dir = os.path.dirname(sys.executable)
-        else:
-            # If running as a script
-            self.app_dir = os.path.dirname(os.path.abspath(__file__))
-            
-        self.config_file = os.path.join(self.app_dir, "config.json")
+        # --- PERMANENT CONFIG STORAGE ---
+        # Using %APPDATA% ensures settings are saved in a user-accessible folder 
+        # and won't be lost when the .exe is run from a temporary directory.
+        self.app_data_dir = os.path.join(os.getenv('APPDATA', os.path.expanduser('~')), "S3DriveReplica")
+        os.makedirs(self.app_data_dir, exist_ok=True)
+        
+        self.config_file = os.path.join(self.app_data_dir, "config.json")
+        self.log_file_path = os.path.join(self.app_data_dir, "app_log.txt")
 
         # --- UI LAYOUT ---
         self.main_container = ctk.CTkScrollableFrame(self)
@@ -92,8 +90,8 @@ class S3DriveApp(ctk.CTk):
         self.load_config()
 
         # --- Drag and Drop Setup ---
-        # Delay the hook until the window is fully rendered to prevent crashes
-        self.after(200, self.setup_drag_and_drop)
+        # Using a delay to ensure the window is fully realized in Windows memory
+        self.after(500, self.setup_drag_and_drop)
 
     def create_input(self, parent, label, show=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
@@ -106,9 +104,7 @@ class S3DriveApp(ctk.CTk):
     def write_log(self, text):
         self.after(0, lambda: self._do_write_log(text))
         try:
-            # Log file also saved in app directory
-            full_log_path = os.path.join(self.app_dir, self.log_file_path)
-            with open(full_log_path, "a", encoding="utf-8") as f:
+            with open(self.log_file_path, "a", encoding="utf-8") as f:
                 f.write(f"{text}\n")
         except:
             pass
@@ -119,10 +115,16 @@ class S3DriveApp(ctk.CTk):
 
     def setup_drag_and_drop(self):
         try:
-            windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
+            # Try to hook using the instance itself first (most stable for some CTK versions)
+            windnd.hook_dropfiles(self, self.handle_drop)
             self.write_log("Drag and drop system enabled. 📥")
         except Exception as e:
-            self.write_log(f"Failed to enable drag and drop: {str(e)} ❌")
+            try:
+                # Fallback to winfo_id
+                windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
+                self.write_log("Drag and drop system enabled (ID mode). 📥")
+            except Exception as e2:
+                self.write_log(f"Critical: Drag and drop failed to initialize: {str(e2)} ❌")
 
     def update_file_list_ui(self):
         for widget in self.file_list_frame.winfo_children():
@@ -142,16 +144,21 @@ class S3DriveApp(ctk.CTk):
             self.write_log(f"Added {len(files)} file(s). 📂")
 
     def handle_drop(self, files):
-        dropped_files = []
-        for f in files:
-            path = f.decode('utf-8') if isinstance(f, bytes) else f
-            if path.startswith('{') and path.endswith('}'):
-                path = path[1:-1]
-            if os.path.exists(path) and path not in self.selected_files:
-                self.selected_files.append(path)
-                dropped_files.append(path)
-        self.after(0, self.update_file_list_ui)
-        self.after(0, lambda: self.write_log(f"Dropped {len(dropped_files)} file(s). 📥"))
+        # windnd calls this from a separate OS thread. 
+        # We MUST move all GUI logic into self.after(0, ...) immediately.
+        def process_drop():
+            dropped_files = []
+            for f in files:
+                path = f.decode('utf-8') if isinstance(f, bytes) else f
+                if path.startswith('{') and path.endswith('}'):
+                    path = path[1:-1]
+                if os.path.exists(path) and path not in self.selected_files:
+                    self.selected_files.append(path)
+                    dropped_files.append(path)
+            self.update_file_list_ui()
+            self.write_log(f"Dropped {len(dropped_files)} file(s). 📥")
+
+        self.after(0, process_drop)
 
     def clear_files(self):
         self.selected_files = []
