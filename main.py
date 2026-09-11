@@ -13,7 +13,10 @@ class S3DriveApp(ctk.CTk):
 
         self.title("S3Drive Replica - Secure Uploader [v0.1.9]")
         self.geometry("600x800")
-        ctk.set_appearance_mode("dark")\n        ctk.set_default_color_theme("blue")
+        
+        # CORRECTED: These are class methods of customtkinter, not methods of the app instance (self)
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
 
         # UI State
         self.selected_files = []
@@ -22,7 +25,6 @@ class S3DriveApp(ctk.CTk):
         self.config_file = "config.json"
 
         # --- UI LAYOUT ---
-        # Create a main scrollable container for the entire app content
         self.main_container = ctk.CTkScrollableFrame(self)
         self.main_container.pack(pady=0, padx=0, fill="both", expand=True)
         
@@ -81,7 +83,6 @@ class S3DriveApp(ctk.CTk):
         self.load_config()
 
         # --- Drag and Drop Setup ---
-        # Using winfo_id() is crucial to avoid crashes
         windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
 
     def create_input(self, parent, label, show=None):
@@ -157,12 +158,10 @@ class S3DriveApp(ctk.CTk):
             try:
                 with open(self.config_file, "r") as f:
                     config = json.load(f)
-                
                 self.access_key.insert(0, config.get("access_key", ""))
                 self.bucket_name.insert(0, config.get("bucket_name", ""))
                 self.region.insert(0, config.get("region", ""))
                 self.enc_mode.set(config.get("enc_mode", "Symmetric"))
-                
                 self.key_input.delete("1.0", "end")
                 self.key_input.insert("1.0", config.get("key_data", ""))
             except Exception as e:
@@ -171,7 +170,6 @@ class S3DriveApp(ctk.CTk):
     def start_upload_thread(self):
         if self.is_uploading:
             return
-        # Save config before starting
         self.save_config()
         self.log.delete("1.0", "end")
         self.write_log("Starting new upload process... 🚀")
