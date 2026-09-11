@@ -120,12 +120,14 @@ class S3DriveApp(ctk.CTk):
                 
                 if success:
                     self.write_log(f"Uploaded {obj_name} to S3. 🚀")
+                    self.write_log(f"Verification: {msg} ✅")
                     
-                    # 3. Remove Local File
+                    # 3. Remove Local File (Only after verified success)
                     os.remove(file_path)
                     self.write_log(f"Deleted local file {filename}. 🧹")
                 else:
-                    self.write_log(f"Upload failed for {filename}: {msg} ❌")
+                    self.write_log(f"Upload/Verification failed for {filename}: {msg} ❌")
+                    self.write_log(f"Local file {filename} has been KEPT for safety! 🛡️")
 
             except Exception as e:
                 self.write_log(f"Error processing {filename}: {str(e)} ❌")
