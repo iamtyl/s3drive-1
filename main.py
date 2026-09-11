@@ -12,7 +12,7 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.11]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.12]")
         self.geometry("600x800")
         
         ctk.set_appearance_mode("dark")
@@ -75,10 +75,14 @@ class S3DriveApp(ctk.CTk):
         self.btn_clear = ctk.CTkButton(self.up_frame, text="Clear List", fg_color="gray", command=self.clear_files)
         self.btn_clear.pack(pady=5)
 
-        # ACTION BUTTON
+        # ACTION BUTTONS
         self.btn_upload = ctk.CTkButton(self.main_container, text="ENCRYPT & UPLOAD", fg_color="green", 
                                        hover_color="darkgreen", command=self.start_upload_thread, font=("Arial", 14, "bold"))
-        self.btn_upload.pack(pady=20)
+        self.btn_upload.pack(pady=(20, 5))
+        
+        self.btn_save_config = ctk.CTkButton(self.main_container, text="Save Configuration", fg_color="blue", 
+                                            hover_color="darkblue", command=self.save_config, font=("Arial", 12))
+        self.btn_save_config.pack(pady=5)
 
         # Log Window
         ctk.CTkLabel(self.main_container, text="Activity Log", font=("Arial", 12, "bold")).pack(pady=(10, 0))
@@ -90,8 +94,8 @@ class S3DriveApp(ctk.CTk):
         self.load_config()
 
         # --- Drag and Drop Setup ---
-        # Using a delay to ensure the window is fully realized in Windows memory
-        self.after(500, self.setup_drag_and_drop)
+        # REMOVED: Drag and drop feature removed to ensure stability
+        # windnd.hook_dropfiles(self.winfo_id(), self.handle_drop)
 
     def create_input(self, parent, label, show=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
