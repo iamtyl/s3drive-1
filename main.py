@@ -9,8 +9,8 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.3.0]")
-        self.geometry("600x750")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.1]")
+        self.geometry("600x720")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
 
@@ -24,7 +24,7 @@ class S3DriveApp(ctk.CTk):
 
         # Connection Frame
         self.conn_frame = ctk.CTkFrame(self)
-        self.conn_frame.pack(pady=15, padx=20, fill="x")
+        self.conn_frame.pack(pady=10, padx=20, fill="x")
         
         ctk.CTkLabel(self.conn_frame, text="AWS S3 Connection", font=("Arial", 16, "bold")).pack(pady=5)
         
@@ -35,7 +35,7 @@ class S3DriveApp(ctk.CTk):
 
         # Security Frame
         self.sec_frame = ctk.CTkFrame(self)
-        self.sec_frame.pack(pady=15, padx=20, fill="x")
+        self.sec_frame.pack(pady=10, padx=20, fill="x")
         
         ctk.CTkLabel(self.sec_frame, text="PGP Encryption", font=("Arial", 16, "bold")).pack(pady=5)
         
@@ -49,7 +49,7 @@ class S3DriveApp(ctk.CTk):
 
         # Upload Frame
         self.up_frame = ctk.CTkFrame(self)
-        self.up_frame.pack(pady=15, padx=20, fill="x")
+        self.up_frame.pack(pady=10, padx=20, fill="x")
 
         self.file_label = ctk.CTkLabel(self.up_frame, text="No files selected")
         self.file_label.pack(pady=10)
@@ -57,16 +57,16 @@ class S3DriveApp(ctk.CTk):
         self.btn_select = ctk.CTkButton(self.up_frame, text="Select Files", command=self.select_files)
         self.btn_select.pack(pady=5)
 
-        # Log Window (Moved ABOVE the button for visibility!)
-        ctk.CTkLabel(self, text="Activity Log", font=("Arial", 12, "bold")).pack(pady=(10, 0))
-        self.log = ctk.CTkTextbox(self, height=200)
-        self.log.pack(pady=10, padx=20, fill="x")
-        self.write_log("Ready to upload! ✨")
-
-        # Action Button (Now at the very bottom)
+        # ACTION BUTTON (Now moved ABOVE the log for guaranteed visibility!)
         self.btn_upload = ctk.CTkButton(self, text="ENCRYPT & UPLOAD", fg_color="green", 
                                        hover_color="darkgreen", command=self.start_upload_thread, font=("Arial", 14, "bold"))
         self.btn_upload.pack(pady=20)
+
+        # Log Window (Now at the bottom)
+        ctk.CTkLabel(self, text="Activity Log", font=("Arial", 12, "bold")).pack(pady=(10, 0))
+        self.log = ctk.CTkTextbox(self, height=180)
+        self.log.pack(pady=10, padx=20, fill="x")
+        self.write_log("Ready to upload! ✨")
 
     def create_input(self, parent, label, show=None):
         frame = ctk.CTkFrame(parent, fg_color="transparent")
