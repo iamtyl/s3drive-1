@@ -1,18 +1,19 @@
-
 import pgpy
 from pgpy.constants import PubKeyAlgorithm
 import os
 
 def encrypt_symmetric(data, passphrase):
     """Encrypts data using a symmetric passphrase."""
-    key = pgpy.PGPKey.from_passphrase(passphrase)
-    encrypted_data = pgpy.PGPMessage.new(data).encrypt(key)
+    # In PGPy, symmetric encryption is done directly on the message
+    message = pgpy.PGPMessage.new(data)
+    encrypted_data = message.encrypt(passphrase)
     return encrypted_data.serialize()
 
 def encrypt_asymmetric(data, public_key_text):
     """Encrypts data using a PGP public key."""
     key, _ = pgpy.PGPKey.from_blob(public_key_text)
-    encrypted_data = pgpy.PGPMessage.new(data).encrypt(key)
+    message = pgpy.PGPMessage.new(data)
+    encrypted_data = message.encrypt(key)
     return encrypted_data.serialize()
 
 def encrypt_file(file_path, passphrase=None, public_key=None):

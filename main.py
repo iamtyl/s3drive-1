@@ -9,7 +9,7 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.1]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.2]")
         self.geometry("600x720")
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
