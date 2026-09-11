@@ -11,10 +11,9 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.8]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.9]")
         self.geometry("600x800")
-        ctk.set_appearance_mode("dark")
-        self.set_default_color_theme("blue")
+        ctk.set_appearance_mode("dark")\n        ctk.set_default_color_theme("blue")
 
         # UI State
         self.selected_files = []
