@@ -243,7 +243,7 @@ class S3DriveApp(ctk.CTk):
                         self.write_log(f"Encrypting session key with Public Key... 🔒")
                     encrypted_content = encrypt_file(file_path, public_key=key_data)
                 self.write_log(f"Encryption complete! 🛡️")
-                obj_name = filename + ".pgp"
+                obj_name = filename + ".enc"
                 success, msg = upload_to_s3(encrypted_content, bucket, obj_name, access, secret, region)
                 if success:
                     self.write_log(f"Uploaded {obj_name} to S3. 🚀")
