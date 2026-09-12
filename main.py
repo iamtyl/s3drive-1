@@ -4,7 +4,6 @@ import os
 import threading
 import json
 import sys
-import windnd
 from encryption import encrypt_file
 from s3_uploader import upload_to_s3
 
@@ -12,7 +11,7 @@ class S3DriveApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("S3Drive Replica - Secure Uploader [v0.1.13]")
+        self.title("S3Drive Replica - Secure Uploader [v0.1.14]")
         self.geometry("600x800")
         
         ctk.set_appearance_mode("dark")
