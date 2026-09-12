@@ -2,4 +2,3 @@ boto3
 customtkinter
 cryptography
 pyinstaller
-windnd
