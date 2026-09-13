@@ -2,20 +2,22 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import os
+import hashlib
 
 def encrypt_symmetric(data, passphrase):
-    """Encrypts data using a symmetric passphrase (AES-GCM)."""
-    # Derive a 32-byte key from the passphrase
-    # For simplicity in this tool, we'll use a basic hash for the key
-    import hashlib
-    key = hashlib.sha256(passphrase.encode()).digest()
+    """Encrypts data using a symmetric passphrase (AES-GCM) with PBKDF2 key derivation."""
+    # Generate a random 16-byte salt
+    salt = os.urandom(16)
+    
+    # Derive a 32-byte key using PBKDF2-HMAC-SHA256 (matching Decryptor)
+    key = hashlib.pbkdf2_hmac('sha256', passphrase.encode(), salt, 600000, dklen=32)
     
     aesgcm = AESGCM(key)
     nonce = os.urandom(12)
     ciphertext = aesgcm.encrypt(nonce, data, None)
     
-    # Return nonce + ciphertext
-    return nonce + ciphertext
+    # Return salt + nonce + ciphertext
+    return salt + nonce + ciphertext
 
 def encrypt_asymmetric(data, public_key_text):
     """
@@ -47,7 +49,6 @@ def encrypt_asymmetric(data, public_key_text):
     )
     
     # 4. Bundle everything
-    # Length of the encrypted key is needed for decryption
     key_len = len(encrypted_session_key).to_bytes(4, byteorder='big')
     
     return key_len + encrypted_session_key + nonce + ciphertext
